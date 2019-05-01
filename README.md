@@ -14,16 +14,25 @@ backwards compatibility.  It's still relatively small, though, under
 200 lines.
 
 ## Usage
-The lines between `Running...` and `Halting.` is the program output,
+The lines between `Running...` and `Stopping.` is the program output,
 in this case, it's `15`.
 ```text
-$ awk -f vm.awk int_sum.asm in.txt
+$ awk -f vm int_sum.asm in.txt
 Pass 1...done
 Pass 2...done. 12 bytes total
 Running...
 15
 
-Halting. Program counter at 10.
+Stopping. Program counter at 10.
+
+$ awk -f vm greet.asm
+Pass 1...done
+Pass 2...done. 111 bytes total
+Running...
+What is your name? (Press RET twice to enter) Brian Kernighan
+
+Hello, Brian Kernighan.
+Stopping. Program counter at 22.
 ```
 
 ## VM Instructions (backwards compatible with TAPL)

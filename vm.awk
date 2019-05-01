@@ -1,7 +1,7 @@
 BEGIN {
     # Initialize ASCII table.
     for(n = 0; n < 256; n++) {
-        ord[sprintf("%c",n)]=n
+        ord[sprintf("%c",n)] = n
     }
 
     # Check if the file exists
@@ -12,23 +12,20 @@ BEGIN {
     }
 
     tempfile = "asm.temp"
+    ARGV[1] = ""
 
     # Backwards compatible ISA with the VM in the `AWK programming language'
     n = split("const get put ld st add sub jpos jz j halt\
                mul div lda inc dec sti ldi putc getc puts", x)
 
     for (i = 1; i <= n; i++) {
-        op[x[i]] = i-1
+        op[x[i]] = i - 1
     }
 
     printf("Pass 1...")
     FS = "[ \t]+"
-    blkcount = 0
-    nextmem = 0
-    # Allocation of extra "registers" (r0, r1, r2, r3 ...)
-    extraRegs = 0
-    while ( (stat = getline < srcfile) > 0) {
 
+    while ((stat = getline < srcfile) > 0) {
         sub(/#.*/, "")
         # alternate comment syntax
         sub(/;.*/, "")
@@ -49,19 +46,17 @@ BEGIN {
                 split(s, x,"")
                 j = 0
                 for (i in x) {
-                    print sprintf("const_%.2d_%.2d %d",blkcount, j,ord[x[i]]) > tempfile
-                    j++
+                    print sprintf("const_%.2d_%.2d %d",blkcount, j++, ord[x[i]]) > tempfile
                 }
-                print sprintf("const_%.2d_%.2d %d", blkcount, j,0) > tempfile
+                # NUL at end of string
+                print sprintf("const_%.2d_%.2d %d", blkcount++, j++, 0) > tempfile
                 nextmem += j
-                blkcount++                
             }
 
             if (!found) {
                 printf("ERROR: Could not read string at address %d\n", nextmem)
                 exit(1)
             }
-            
         } else if ($2 != "") {
             print $2 "\t" $3 > tempfile
             nextmem++
@@ -69,24 +64,21 @@ BEGIN {
     }
     close(tempfile)
 
-    printf("done\n")
+    printf("done\nPass 2...")
 
-    printf("Pass 2...")
     nextmem = 0
-    if (DEBUG) { print "" }
-    while (getline <tempfile > 0) {
+    if (DEBUG) print ""
+    while (getline < tempfile > 0) {
         if ($2 !~ /^[0-9]*$/) {
             $2 = symtab[$2]
         }
-
         mem[nextmem] = 1000 * op[$1] + $2
-        if (DEBUG && mem[nextmem]) {
-            printf("%3d: %.5d\n", nextmem, mem[nextmem])
+        if (DEBUG && (b = mem[nextmem])) {
+            printf("%3d: %.5d%s\n", nextmem, b, b < 256 ? sprintf(" %c", b): "")
         }
         nextmem++
     }
     printf("done. %d bytes total\n", nextmem)
-
 
     # bytecode interpreter
     print("Running...")
@@ -96,7 +88,7 @@ BEGIN {
         addr = mem[pc] % 1000
         code = int(mem[pc++] / 1000)
         if      (code == op["get"])  { getline acc }
-        else if (code == op["put"])  { print acc }
+        else if (code == op["put"])  { print (acc + 0) }
         else if (code == op["st"])   { mem[addr] = acc }
         else if (code == op["ld"])   { acc = mem[addr] }
         else if (code == op["add"])  { acc = (acc + mem[addr]) % 1000 }
@@ -117,26 +109,22 @@ BEGIN {
         else if (code == op["getc"]) { if (!stdin) { getline stdin }; acc = ord[substr(stdin, 1, 1)]; stdin = substr(stdin, 2) }
         else if (code == op["puts"]) { while(mem[acc]) { printf("%c", mem[acc++]) } }
         
-        else { invalid_opcode(code) }
+        else { printf("INVALID OPCODE: %d\n", code); exit(1) }
     }
 }
 
-function invalid_opcode(code) {
-    printf("INVALID OPCODE: %d\n", code)
-    exit(1)
-}
+
 
 function halt(pc, mem) {
-    printf("\nHalting. Program counter at %d.\n", pc)
+    printf("\nStopping. Program counter at %d.\n", pc)
 
-    if (!DEBUG) {
-        exit(0)
-    }
+    if (!DEBUG) exit(0)
     
     print "Memory:\n-------------"
     for (i in mem) {
-        if (mem[i]) {
-            printf("%.5d: %.5d\n", i, mem[i])
+        # = is not a typo, assignment to a variable returns the value
+        if (b = mem[i]) {
+            printf("%3d: %.5d%s\n", i, b, b < 256 ? sprintf(" %c", b): "")
         }
     }
     print "-------------"
