@@ -8,6 +8,7 @@ loop
     dec
     st count
     get
+    jz done_read
     sti arrayptr
     ld arrayptr
     inc
@@ -16,17 +17,12 @@ loop
     
 
 done_read
-    lda 10
-    st count
     lda array
     st arrayptr
     
 print_loop
-    ld count
-    jz done
-    dec
-    st count
     ldi arrayptr
+    jz done
     put
     ld arrayptr
     inc

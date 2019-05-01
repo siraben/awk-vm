@@ -16,7 +16,7 @@ BEGIN {
 
     # Backwards compatible ISA with the VM in the `AWK programming language'
     n = split("const get put ld st add sub jpos jz j halt\
-               mul div lda inc dec sti ldi putc getc puts", x)
+               mul div lda inc dec sti ldi putc getc puts putn lj ret", x)
 
     for (i = 1; i <= n; i++) {
         op[x[i]] = i - 1
@@ -46,10 +46,10 @@ BEGIN {
                 split(s, x,"")
                 j = 0
                 for (i in x) {
-                    print sprintf("const_%.2d_%.2d %d",blkcount, j++, ord[x[i]]) > tempfile
+                    print sprintf("const_%.2d_%.2d %.3d",blkcount, j++, ord[x[i]]) > tempfile
                 }
                 # NUL at end of string
-                print sprintf("const_%.2d_%.2d %d", blkcount++, j++, 0) > tempfile
+                print sprintf("const_%.2d_%.2d %.3d", blkcount++, j++, 0) > tempfile
                 nextmem += j
             }
 
@@ -74,7 +74,7 @@ BEGIN {
         }
         mem[nextmem] = 1000 * op[$1] + $2
         if (DEBUG && (b = mem[nextmem])) {
-            printf("%3d: %.5d%s\n", nextmem, b, b < 256 ? sprintf(" %c", b): "")
+            printf("%3d: %.5d %s %s\n", nextmem, b, $0, b < 256 ? sprintf(" %c", b): "")
         }
         nextmem++
     }
@@ -82,7 +82,10 @@ BEGIN {
 
     # bytecode interpreter
     print("Running...")
+    # accumulator
     acc = 0
+    # address after last jump instruciton
+    jaddr = 0
     stdin = ""
     for (pc = 0; pc >= 0;) {
         addr = mem[pc] % 1000
@@ -90,24 +93,27 @@ BEGIN {
         if      (code == op["get"])  { getline acc }
         else if (code == op["put"])  { print (acc + 0) }
         else if (code == op["st"])   { mem[addr] = acc }
-        else if (code == op["ld"])   { acc = mem[addr] }
-        else if (code == op["add"])  { acc = (acc + mem[addr]) % 1000 }
-        else if (code == op["sub"])  { acc = (1000 + acc - mem[addr]) % 1000 }
-        else if (code == op["jpos"]) { if (acc >  0) pc = addr }
-        else if (code == op["jz"])   { if (acc == 0) pc = addr }
-        else if (code == op["j"])    { pc = addr }
+        else if (code == op["ld"])   { acc = mem[addr] % 100000 }
+        else if (code == op["add"])  { acc = (acc + mem[addr]) % 100000 }
+        else if (code == op["sub"])  { acc = (100000 + acc - mem[addr]) % 100000 }
+        else if (code == op["jpos"]) { if (acc >  0) jaddr = pc; pc = addr }
+        else if (code == op["jz"])   { if (acc == 0) jaddr = pc; pc = addr }
+        else if (code == op["j"])    { jaddr = pc; pc = addr }
         else if (code == op["halt"]) { halt(pc, mem) }
         # Additional instructions
-        else if (code == op["mul"])  { acc = (acc * mem[addr]) % 1000 }
-        else if (code == op["div"])  { acc = int(acc / mem[addr]) % 1000 }
+        else if (code == op["mul"])  { acc = (acc * mem[addr]) % 100000 }
+        else if (code == op["div"])  { acc = int(acc / mem[addr]) % 100000 }
         else if (code == op["lda"])  { acc = addr }
-        else if (code == op["inc"])  { acc = (acc + 1) % 1000 }
-        else if (code == op["dec"])  { acc = (acc + 999) % 1000 }
+        else if (code == op["inc"])  { acc = (acc + 1) % 100000 }
+        else if (code == op["dec"])  { acc = (acc + 99999) % 100000 }
         else if (code == op["sti"])  { mem[mem[addr]] = acc }
         else if (code == op["ldi"])  { acc = mem[mem[addr]] }
         else if (code == op["putc"]) { printf("%c", acc) }
         else if (code == op["getc"]) { if (!stdin) { getline stdin }; acc = ord[substr(stdin, 1, 1)]; stdin = substr(stdin, 2) }
         else if (code == op["puts"]) { while(mem[acc]) { printf("%c", mem[acc++]) } }
+        else if (code == op["putn"]) { while(mem[acc]) { printf("%c", mem[acc++]) } print "" }
+        else if (code == op["lj"])   { acc = jaddr }
+        else if (code == op["ret"])  { pc = jaddr }
         
         else { printf("INVALID OPCODE: %d\n", code); exit(1) }
     }

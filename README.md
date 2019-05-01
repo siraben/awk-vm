@@ -38,6 +38,8 @@ Stopping. Program counter at 22.
 ## VM Instructions (backwards compatible with TAPL)
 **N.B. Instructions with opcode > 10 were written by me.**
 
+**Boldface on opcodes <= 10 indicate changed behavior from the book**
+
 | Opcode | Instruction | Meaning                                                              |
 | :-:    | :-:         | :-:                                                                  |
 | 01     | get         | read a number from the input into the accumulator                    |
@@ -46,9 +48,9 @@ Stopping. Program counter at 22.
 | 04     | st M        | store contents of accumulator in location M                          |
 | 05     | add M       | add contents of location M to accumulator                            |
 | 06     | sub M       | subtract contents of location M from accumulator                     |
-| 07     | jpos M      | jump to location M if accumulator is positive                        |
-| 08     | jz M        | jump to location M if accumulator is zero                            |
-| 09     | j M         | jump to location M                                                   |
+| 07     | jpos M      | jump to location M if accumulator is positive, **set J = PC + 1**    |
+| 08     | jz M        | jump to location M if accumulator is zero, **set J = PC + 1**        |
+| 09     | j M         | jump to location M, **set J = PC + 1**                               |
 | 10     | halt        | stop execution                                                       |
 | 11     | mul M       | multiply contents of location M with accumulator                     |
 | 12     | div M       | divide accumulator with contents of location M                       |
@@ -60,6 +62,9 @@ Stopping. Program counter at 22.
 | 18     | putc        | write the contents of the accumulator as an ASCII character          |
 | 19     | getc        | read a character from the input as an ASCII character                |
 | 20     | puts        | print the contents starting from the accumulator until a NUL is read |
+| 21     | putn        | like `puts` but with a trailing newline                              |
+| 22     | lj          | set the accumulator to the value of the j register (A = J)           |
+| 23     | ret         | set the program counter to the value of the j register (PC = J)      |
 
 ## Assembler directives ("pseudo-operations")
 | Instruction | Meaning                                                    |
