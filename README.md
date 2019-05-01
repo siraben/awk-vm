@@ -82,6 +82,31 @@ bar const 5
 # Declare string "msg" with contents "hello, world!"
 msg string "hello, world!"
 ```
+## Simple benchmarks
+Mostly qualitative, not rigorous benchmarks.  `benchmark.asm` and
+`fbenchmark2.asm` perform the same computation (decrement a number
+from 99999 to 0, 100 times), but `benchmark.asm` uses the accumulator
+to hold the value, whereas `benchmark2.asm` uses a memory cell.
+`benchmark.asm` runs in 60% of the instructions and takes 70% of the time
+compared to `benchmark2.asm`.
+
+```text
+$ time awk -f vm benchmark.asm 
+...
+Stopping after 30000499 instructions.  Program counter at 12.
+awk -f vm benchmark.asm  26.91s user 0.05s system 99% cpu 26.972 total
+
+$ time awk -f vm benchmark2.asm
+...
+Stopping after 50000597 instructions.  Program counter at 13.
+awk -f vm benchmark2.asm  36.26s user 0.00s system 99% cpu 36.258 total
+```
+- `benchmark.asm` (26.91/30000499) ≈ (0.897 µs/cycle)
+- `benchmark2.asm` (36.26/50000597) ≈ (0.725 µs/cycle)
+
+Using 0.725 µs/cycle, we find that the VM runs at a speed of 1.38
+MHz.  Not bad for 150 lines of Awk!
+
 ## Future plans
 ### Enhancing current ISA
 - Multiplication, division

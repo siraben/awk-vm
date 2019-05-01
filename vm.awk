@@ -44,7 +44,6 @@ BEGIN {
                 sub(/"[^"]*"/,"")
                 found = 1
                 split(s, x,"")
-                j = 0
                 for (i in x) {
                     print sprintf("const_%.2d_%.2d %.3d",blkcount, j++, ord[x[i]]) > tempfile
                 }
@@ -88,6 +87,7 @@ BEGIN {
     jaddr = 0
     stdin = ""
     for (pc = 0; pc >= 0;) {
+        cycles++
         addr = mem[pc] % 1000
         code = int(mem[pc++] / 1000)
         if      (code == op["get"])  { getline acc }
@@ -96,8 +96,8 @@ BEGIN {
         else if (code == op["ld"])   { acc = mem[addr] % 100000 }
         else if (code == op["add"])  { acc = (acc + mem[addr]) % 100000 }
         else if (code == op["sub"])  { acc = (100000 + acc - mem[addr]) % 100000 }
-        else if (code == op["jpos"]) { if (acc >  0) jaddr = pc; pc = addr }
-        else if (code == op["jz"])   { if (acc == 0) jaddr = pc; pc = addr }
+        else if (code == op["jpos"]) { if (acc >  0) { jaddr = pc; pc = addr } }
+        else if (code == op["jz"])   { if (acc == 0) { jaddr = pc; pc = addr } }
         else if (code == op["j"])    { jaddr = pc; pc = addr }
         else if (code == op["halt"]) { halt(pc, mem) }
         # Additional instructions
@@ -114,18 +114,15 @@ BEGIN {
         else if (code == op["putn"]) { while(mem[acc]) { printf("%c", mem[acc++]) } print "" }
         else if (code == op["lj"])   { acc = jaddr }
         else if (code == op["ret"])  { pc = jaddr }
-        
         else { printf("INVALID OPCODE: %d\n", code); exit(1) }
     }
 }
 
-
-
 function halt(pc, mem) {
-    printf("\nStopping. Program counter at %d.\n", pc)
+    printf("\nStopping after %d instructions.  Program counter at %d.\n", cycles, pc)
 
     if (!DEBUG) exit(0)
-    
+
     print "Memory:\n-------------"
     for (i in mem) {
         # = is not a typo, assignment to a variable returns the value
@@ -135,6 +132,5 @@ function halt(pc, mem) {
     }
     print "-------------"
     printf("Memory ends at address: %d\n", i)
-    
     exit(0)
 }

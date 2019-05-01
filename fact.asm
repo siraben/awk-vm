@@ -4,7 +4,6 @@
 fact_loop
    jz done
    st c
-   ld c
 
    mul acc
    st acc

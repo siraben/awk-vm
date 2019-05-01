@@ -1,4 +1,6 @@
 ;; Reverse a user's string.
+   lda msg1
+   puts
 get_s
    getc
    jz print_rev     ;; Reached end
@@ -32,5 +34,5 @@ done
 
 s_ptr const s
 s blk 32
-msg1 string "Enter a string to reverse: ""
+msg1 string "Enter a string to reverse: "
 c const 0
