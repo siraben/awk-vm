@@ -1,9 +1,9 @@
 ;; Ask for a user's name
-
    lda msg1
    puts
 
 get_name
+   lda 5
    getc
    jz say_hi     ;; Reached end
    sti name_ptr
@@ -30,6 +30,6 @@ say_hi
 chars const 32
 name_ptr const name
 name blk 32
-msg1 string "What is your name? (Press RET twice to enter) "
+msg1 string "What is your name? "
 msg2 string "Hello, "
 

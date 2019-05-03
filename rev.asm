@@ -17,6 +17,7 @@ get_s
 print_rev
    lda s
    sub s_ptr
+   inc
    ;; c contains number of characters to print.
 print_loop
    st c

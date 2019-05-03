@@ -20,21 +20,29 @@ in this case, it's `15`.
 $ awk -f vm int_sum.asm in.txt
 Pass 1...done
 Pass 2...done. 12 bytes total
-Running...
+Running program...
 15
 
-Stopping. Program counter at 10.
+Stopping after 32 instructions.  Program counter at 10.
 
 $ awk -f vm greet.asm
 Pass 1...done
-Pass 2...done. 111 bytes total
-Running...
-What is your name? (Press RET twice to enter) Brian Kernighan
-
+Pass 2...done. 85 bytes total
+Running program...
+What is your name? Brian Kernighan
 Hello, Brian Kernighan.
-Stopping. Program counter at 22.
+Stopping after 206 instructions.  Program counter at 23.
 ```
 
+## Hello World example
+```asm
+start
+        lda msg
+        puts
+        halt
+
+msg string "hello, world!"
+```
 ## VM Instructions (backwards compatible with TAPL)
 **N.B. Instructions with opcode > 10 were written by me.**
 
@@ -84,7 +92,7 @@ msg string "hello, world!"
 ```
 ## Simple benchmarks
 Mostly qualitative, not rigorous benchmarks.  `benchmark.asm` and
-`fbenchmark2.asm` perform the same computation (decrement a number
+`benchmark2.asm` perform the same computation (decrement a number
 from 99999 to 0, 100 times), but `benchmark.asm` uses the accumulator
 to hold the value, whereas `benchmark2.asm` uses a memory cell.
 `benchmark.asm` runs in 60% of the instructions and takes 70% of the time
@@ -106,6 +114,28 @@ awk -f vm benchmark2.asm  36.26s user 0.00s system 99% cpu 36.258 total
 
 Using 0.725 µs/cycle, we find that the VM runs at a speed of 1.38
 MHz.  Not bad for 150 lines of Awk!
+
+### With mawk
+`vm.awk` doesn't depend on implementation specific features (such as
+the traversal order of associative arrays), so we can test out
+different Awk implementations, take, for instance,
+[mawk](https://invisible-island.net/mawk/mawk.html):
+
+```text
+$ time mawk -f vm.awk benchmark.asm
+...
+Stopping after 30000499 instructions.  Program counter at 12.
+mawk -f vm.awk benchmark.asm  15.72s user 0.00s system 99% cpu 15.731 total
+
+$ time mawk -f vm.awk benchmark2.asm
+...
+Stopping after 50000597 instructions.  Program counter at 13.
+mawk -f vm.awk benchmark2.asm  21.00s user 0.01s system 99% cpu 21.007 total
+```
+- `benchmark.asm` (15.72/30000499) ≈ (0.524 µs/cycle)
+- `benchmark2.asm` (21.00/50000597) ≈ (0.420 µs/cycle)
+
+Now the VM runs at 2.38 MHz!
 
 ## Future plans
 ### Enhancing current ISA
